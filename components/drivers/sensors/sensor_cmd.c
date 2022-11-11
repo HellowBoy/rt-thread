@@ -10,7 +10,7 @@
  * 2020-02-22     luhuadong      Add vendor info and sensor types for cmd
  */
 
-#include "sensor.h"
+#include <drivers/sensor.h>
 
 #define DBG_TAG  "sensor.cmd"
 #define DBG_LVL DBG_INFO
@@ -359,6 +359,9 @@ static void sensor(int argc, char **argv)
             break;
         case RT_SENSOR_VENDOR_MAXIM:
             rt_kprintf("vendor    :Maxim Integrated\n");
+            break;
+        case RT_SENSOR_VENDOR_MELEXIS:
+            rt_kprintf("vendor    :Melexis\n");
             break;
         }
         rt_kprintf("model     :%s\n", info.model);

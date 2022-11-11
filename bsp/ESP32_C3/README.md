@@ -1,20 +1,17 @@
+# ESP32-C3 BSP Introduction
 
-# ESP32-C3 BSP 说明
+[中文](README_ZH.md) | English
 
-## 简介
+This document records the execution instruction of the BSP (board support package) for the [ESP32-C3](http://luatos.com/t/esp32c3) development board.
 
-本文档为 乐鑫ESP32-C3 开发板的[ESP32C3](http://luatos.com/t/esp32c3) BSP (板级支持包) 说明。
+The document is covered in two parts:
 
-主要内容如下：
+- Board Resources Introduction
+- Quickly Get Started
 
-- 开发板资源介绍
-- BSP 快速上手
+## Resources Introduction
 
-通过阅读快速上手章节开发者可以快速地上手该 BSP，将 RT-Thread 运行在开发板上。
-
-## 开发板介绍
-
-目前测试了两款开发板，运行都正常，由于两款开发板LED小灯引脚不同，请根据自己开发板修改GPIO引脚，目前默认使用的开发板是LUATOS_ESP32C3。已测开发板外观如下图所示：
+We tested 2 development boards, it all works, but due to the different LED pins of the two development boards, so we'll need to select the corresponding development board in the menuconfig. 
 
 - [LUATOS_ESP32C3](https://wiki.luatos.com/chips/esp32c3/board.html)
 
@@ -24,66 +21,87 @@
 
 ![hongxu](images/hx_shang.png)
 
+The mainly-used resources of LUATOS_ESP32C3 are shown as follows:
+
+- MCU: [esp32-c3](https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf)，Main Frequency 160MHz, 407.22 CoreMark; 2.55 CoreMark/MHz
+- Built-in Chip: 384KB ROM, 400KB SRAM
+- Peripherals
+  - Red LED: 2, LED: D4 (IO12), D5（IO13）
+  - Button: 2, K1（BOOT） K2(RST)
+  - SPI FLASH: 4M
+- Common-used interfaces: USB, UART, etc.
+
+### For more details about this board, please refer to [Here](https://wiki.luatos.com/chips/esp32c3/board.html).
+
+## **Peripheral Condition**
+
+Each peripheral supporting condition for this BSP is as follows:
+
+| **On-board Peripherals** | ****Support**** | ****Remark****                                               |
+| ------------------------ | --------------- | ------------------------------------------------------------ |
+| GPIO                     | Support         |                                                              |
+| UART                     | Support         | Using LUATOS_ESP32C3 development board requires connecting serial port to USB chip UART0_TX and UART0_RX (such as CP2102) |
+| JTAG debug               | Support         | ESP32C3 usb-linked development boards can be debugged        |
+
+## Install ESP-IDF
+ESP-IDF can be installed in two ways
+1. Use Env tool
+- Download the package
+```
+pkgs --update
+```
+- Go to ESP-IDF package directory and install IDF tools. This command only needs to be run once after the package is downloaded for the first time.
+```
+cd packages/ESP-IDF-latest
+./install.sh
+# Use install.bat in Windows environment
+```
+- Under the ESP-IDF package directory, export IDF environment variables. This commands need to be run every time when the BSP is built in a new terminal.
+```
+. export.sh
+# Use export.bat in Windows environment
+```
+2. Apply patch to a local installation of ESP-IDF
+- Select the below option with `SCons --menuconfig`
+```
+Hardware Drivers Config
+    [*] Use local ESP-IDF installation
+```
+And deselect ESP-IDF package
+```
+RT-Thread online packages
+    peripheral libraries and drivers
+        [ ] ESP-IDF: Espressif IoT Development Framework
+```
+- Any convenient method to install ESP-IDF can be used, such as [VSCode plugin](https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md). Make sure to install the master version of ESP-IDF.
+- Enter the local ESP-IDF directory and run the following commands
+```
+git checkout 5c1044d84d625219eafa18c24758d9f0e4006b2c
+# Replace rtt.patch with the actual directory of rtt.patch under the BSP directory
+git am rtt.patch
+```
+- After applying the patch, ESP-IDF FreeRTOS projects can be compiled as usual
+## Compile and Upload
+- Configure RT-Thread under the BSP directory
+```
+scons --menuconfig
+```
+- Whenever RT-Thread configuration is changed with `scons --menuconfig`, a new `CMakeLists.txt` needs to be generated with the command below
+```
+scons --target=esp-idf
+```
+- If ESP-IDf is installed using Env, use `idf.py` to compile and upload the program. Refer to [Espressif official documents](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html#build-your-first-project) for reference. Otherwise follow the appropriate steps depending on how ESP-IDF was installed, such as using [VSCode plugin](https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md). 
+- Once the project is successfully downloaded, the system runs automatically, the red LED will blink in 1s on cycles.
+
+## Notes
+
+- The basic functions are now supported, but it needs more, welcome any contributions and feedback. 
 
 
-该LUATOS_ESP32C3开发板常用 **板载资源** 如下：
+Maintainer: 
 
-- MCU：[esp32-c3](https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf)，主频  160MHz， 407.22 CoreMark; 2.55  CoreMark/MHz
-- 芯片内置：384KB ROM,  400KB SRAM,
-- 常用外设
-  - 红色LED：2个，D4 (IO12), D5（IO13）
-  - 按键：2个，K1（BOOT） K2(RST)
-  - SPI FLASH: 2M 
-- 常用接口：USB UART等
+- [supperthomas](https://github.com/supperthomas) email address: [78900636@qq.com](mailto:78900636@qq.com)
+-  [tangzz98](https://github.com/tangzz98) email address: [tangz98@outlook.com](tangz98@outlook.com)
 
-开发板更多详细信息请参考 [ESP32-C3开发板介绍](https://wiki.luatos.com/chips/esp32c3/board.html)。
+Special thanks to [chenyingchun0312](https://github.com/chenyingchun0312) for providing support on the RISC-V part working.
 
-## 外设支持
-
-本 BSP 目前对外设的支持情况如下：
-
-| **片上外设**      | **支持情况** | **备注**                              |
-| :----------------- | :----------: | :------------------------------------- |
-| GPIO              |     待支持     |  |
-| UART              |     待支持     |                                 |
-
-## 使用说明
-
-### 快速上手
-
-说先要搭建IDE开发环境，乐鑫官方推荐使用IDF开发。
-
-IDF的搭建方法有很多种，尝试了很多种方法之后，总结了一个最快速的方法，并且可以使用vscode跨平台安装，非常简单方便，具体方法见链接[ESP-IDF 一键式搭建环境基于VSCODE](https://blog.csdn.net/lt6210925/article/details/123699249)。 安装的时候IDF版本请选择IDF 4.4版本。如果你对官方IDF命令行的方式熟悉的话，你也可以使用命令行的方式，这边已经测试过，是可以使用的。
-
-### IDF patch加载
-
-由于IDF使用的是FREERTOS需要修改一些文件，将`0001-add-fixed-of-rtthread.patch` 这个文件拷贝到安装的时候的IDF的代码目录，执行命令 `git apply 0001-add-fixed-of-rtthread.patch` 打上patch
-
-#### 编译下载
-
-编译选择最下面的按钮：
-
-![build](images/build.png)
-
-这边通常采用串口下载，需要根据你自己开发板选择对应的串口（如果有JTAG的，也可以用JTAG下载和调试）
-
-![burn](images/burn.png)
-
-#### 运行结果
-
-下载程序成功之后，系统会运行，红色的 D4以 1S 周期闪烁。
-刚接触ESP32, 目前仅实现LED小灯闪烁，可以print打印，后续计划将pin设备和console对接上去，也欢迎大家一起来贡献，感兴趣的可以通过公众号`Thomas的小火车`来联系
-
-## 注意事项
-
-- 目前RTTHREAD支持起来了，后续会需要继续完善一些其他功能，刚开始使用ESP32，欢迎小伙伴一起来讨论和贡献。
-
-## 联系人信息
-
-维护人:
-
--  [supperthomas](https://github.com/supperthomas) 邮箱：<78900636@qq.com>
-
-## 特别感谢
-
-- 感谢[chenyingchun0312](https://github.com/chenyingchun0312) 提供了RISCV的强力支持

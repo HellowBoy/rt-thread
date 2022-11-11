@@ -8,8 +8,11 @@ cwd     = GetCurrentDir()
 src     = Split('''
 cache.c
 cpu.c
+gtimer.c
 mmu.c
+pmu.c
 stack.c
+
 ''')
 CPPPATH = [cwd]
 
@@ -26,14 +29,14 @@ if GetDepend('RT_USING_GIC_V3'):
 if rtconfig.PLATFORM in ['armcc', 'armclang']:
     src += Glob('*_rvds.S')
 
-if rtconfig.PLATFORM == 'gcc':
+if rtconfig.PLATFORM in ['gcc']:
     src += Glob('*_init.S')
     src += Glob('*_gcc.S')
 
-if rtconfig.PLATFORM == 'iar':
+if rtconfig.PLATFORM in ['iccarm']:
     src += Glob('*_iar.S')
 
-if rtconfig.PLATFORM == 'iar':
+if rtconfig.PLATFORM in ['iccarm']:
     src += Glob('*_iar.S')
 
 group = DefineGroup('CPU', src, depend = [''], CPPPATH = CPPPATH)

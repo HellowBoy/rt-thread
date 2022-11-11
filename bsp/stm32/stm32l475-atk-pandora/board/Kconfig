@@ -20,10 +20,12 @@ menu "Onboard Peripheral Drivers"
         default y
 
     config BSP_USING_ARDUINO
-        bool "Support Arduino"
+        bool "Compatible with Arduino Ecosystem (RTduino)"
         select PKG_USING_RTDUINO
         select BSP_USING_STLINK_TO_USART
         select BSP_USING_GPIO
+        select BSP_USING_TIM
+        select BSP_USING_TIM7
         select BSP_USING_PWM
         select BSP_USING_PWM1
         select BSP_USING_PWM1_CH1
@@ -37,18 +39,19 @@ menu "Onboard Peripheral Drivers"
         select BSP_USING_ADC
         select BSP_USING_ADC1
         select BSP_USING_I2C
-        select BSP_USING_I2C1
-        select BSP_USING_I2C3
-        select BSP_USING_I2C4
+        select BSP_USING_I2C1 # PC7-SDA PC6-SCL (User I2C)
+        select BSP_USING_I2C3 # ICM20608, AP3216C (On Board)
+        select BSP_USING_I2C4 # AHT10 (On Board)
         select BSP_USING_DAC
         select BSP_USING_DAC1
         select BSP_USING_SPI
-        select BSP_USING_SPI2
+        select BSP_USING_SPI2 # Wireless Interface (User SPI)
         imply BSP_SPI2_TX_USING_DMA
         imply BSP_SPI2_RX_USING_DMA
+        select BSP_USING_SPI3 # LCD ST7789
+        select BSP_SPI3_TX_USING_DMA
         imply RTDUINO_USING_SERVO
         imply RTDUINO_USING_WIRE
-        imply RTDUINO_USING_ADAFRUIT
         imply RTDUINO_USING_SPI
         default n
 
@@ -94,20 +97,45 @@ menu "Onboard Peripheral Drivers"
         select BSP_USING_SPI_LCD
         default n
 
-    config BSP_USING_SDCARD
-        bool "Enable SDCARD (spi1)"
-        select BSP_USING_SPI
-        select BSP_USING_SPI1
-        select RT_USING_SPI_MSD
+    if BSP_USING_LVGL
+        config BSP_USING_LVGL_DEMO
+            bool "Enable LVGL demo"
+            default y
+    endif
+
+
+
+    menuconfig BSP_USING_FS
+        bool "Enable File System"
         select RT_USING_DFS
-        select RT_USING_DFS_ELMFAT
+        select RT_USING_DFS_ROMFS
         default n
+
+        if BSP_USING_FS
+            config BSP_USING_SDCARD_FATFS
+                bool "Enable SDCARD (FATFS)"
+                select BSP_USING_SPI
+                select BSP_USING_SPI1
+                select RT_USING_SPI_MSD
+                select RT_USING_DFS_ELMFAT
+                default n
+
+            config BSP_USING_SPI_FLASH_LITTLEFS
+                bool "Enable SPI-FLASH (LittleFS)"
+                select RT_USING_MTD_NOR
+                select BSP_USING_QSPI_FLASH
+                select RT_USING_FAL
+                select FAL_USING_AUTO_INIT
+                select FAL_PART_HAS_TABLE_CFG
+                select PKG_USING_LITTLEFS
+                default n
+        endif
+
 
     config BSP_USING_ICM20608
         bool "Enable ICM20608 (i2c3)"
         select BSP_USING_I2C
         select BSP_USING_I2C3
-        select PKG_USING_SENSORS_DRIVERS
         select PKG_USING_MPU6XXX
         select PKG_USING_MPU6XXX_LATEST_VERSION
         default n
@@ -116,7 +144,6 @@ menu "Onboard Peripheral Drivers"
         bool "Enable AHT10 (i2c4)"
         select BSP_USING_I2C
         select BSP_USING_I2C4
-        select PKG_USING_SENSORS_DRIVERS
         select PKG_USING_AHT10
         select PKG_USING_AHT10_LATEST_VERSION
         default n
@@ -386,6 +413,10 @@ menu "On-chip Peripheral Drivers"
         default n
         select RT_USING_HWTIMER
         if BSP_USING_TIM
+            config BSP_USING_TIM7
+                bool "Enable TIM7"
+                default n
+
             config BSP_USING_TIM15
                 bool "Enable TIM15"
                 default n

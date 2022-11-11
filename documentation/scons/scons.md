@@ -245,7 +245,7 @@ if GetDepend(['RT_USING_USB_DEVICE']):
 if GetDepend(['RT_USING_SDCARD']):
     src += ['drv_sdcard.c']
 
-if rtconfig.PLATFORM == 'gcc':
+if rtconfig.PLATFORM in ['gcc']:
     src += ['gcc_startup.s']
 
 CPPPATH = [cwd]
@@ -512,7 +512,7 @@ elif CROSS_TOOL == 'keil':
     PLATFORM    = 'armcc'
     EXEC_PATH   = 'C:/Keilv5'
 elif CROSS_TOOL == 'iar':
-    PLATFORM    = 'iar'
+    PLATFORM    = 'iccarm'
     EXEC_PATH   = 'C:/Program Files/IAR Systems/Embedded Workbench 6.0 Evaluation'
 
 if os.getenv('RTT_EXEC_PATH'):

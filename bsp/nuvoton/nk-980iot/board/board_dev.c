@@ -157,18 +157,21 @@ struct rt_mtd_nand_device mtd_partitions[MTD_SPINAND_PARTITION_NUM] =
 {
     [0] =
     {
-        .block_start =  0,
+        /*nand0: U-boot, env, rtthread*/
+        .block_start = 0,
         .block_end   = 63,
         .block_total = 64,
     },
     [1] =
     {
+        /*nand1: for filesystem mounting*/
         .block_start = 64,
         .block_end   = 1023,
-        .block_total = 1000,
+        .block_total = 960,
     },
     [2] =
     {
+        /*nand2: Whole blocks size, overlay*/
         .block_start = 0,
         .block_end   = 1023,
         .block_total = 1024,
@@ -251,35 +254,6 @@ static int rt_hw_esp8266_port(void)
                               (void *) esp8266);
 }
 INIT_APP_EXPORT(rt_hw_esp8266_port);
-
-static int at_wifi_set(int argc, char **argv)
-{
-    struct at_device_ssid_pwd sATDConf;
-    struct at_device *at_dev = RT_NULL;
-
-    /* If the number of arguments less than 2 */
-    if (argc != 3)
-    {
-        rt_kprintf("\n");
-        rt_kprintf("at_wifi_set <ssid> <password>\n");
-        return -1;
-    }
-
-    sATDConf.ssid     = argv[1]; //ssid
-    sATDConf.password = argv[2]; //password
-
-    if ((at_dev = at_device_get_first_initialized()) != RT_NULL)
-        at_device_control(at_dev, AT_DEVICE_CTRL_SET_WIFI_INFO, &sATDConf);
-    else
-    {
-        rt_kprintf("Can't find any initialized AT device.\n");
-    }
-
-    return 0;
-}
-#ifdef FINSH_USING_MSH
-    MSH_CMD_EXPORT(at_wifi_set, AT device wifi set ssid / password function);
-#endif
 #endif /* BOARD_USING_ESP8266  */
 
 
