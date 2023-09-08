@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2022, RT-Thread Development Team
+ * Copyright (c) 2006-2023, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -28,12 +28,12 @@
 
 struct ch32v307x_can_baud_info
 {
-    uint32_t baud_rate;
-    uint16_t prescaler;
-    uint8_t  tsjw;        //CAN synchronisation jump width.
-    uint8_t  tbs1;       //CAN time quantum in bit segment 1.
-    uint8_t  tbs2;       //CAN time quantum in bit segment 2.
-    uint8_t  notused;
+    rt_uint32_t baud_rate;
+    rt_uint16_t prescaler;
+    rt_uint8_t  tsjw;        //CAN synchronisation jump width.
+    rt_uint8_t  tbs1;       //CAN time quantum in bit segment 1.
+    rt_uint8_t  tbs2;       //CAN time quantum in bit segment 2.
+    rt_uint8_t  notused;
 };
 
 #define CH32V307X_CAN_BAUD_DEF(xrate, xsjw, xbs1, xbs2, xprescale) \
@@ -100,7 +100,7 @@ static struct ch32v307x_can_obj  drv_can2 =
 #endif
 
 #ifdef BSP_USING_CAN
-RT_WEAK void ch32v307x_can_gpio_init(CAN_TypeDef *can_base)
+rt_weak void ch32v307x_can_gpio_init(CAN_TypeDef *can_base)
 {
     GPIO_InitTypeDef GPIO_InitSturcture={0};
 #ifdef BSP_USING_CAN1
@@ -165,7 +165,7 @@ RT_WEAK void ch32v307x_can_gpio_init(CAN_TypeDef *can_base)
 
 static uint32_t get_can_baud_index(rt_uint32_t baud)
 {
-    uint32_t len, index;
+    rt_uint32_t len, index;
 
     len = sizeof(can_baud_rate_tab) / sizeof(can_baud_rate_tab[0]);
     for (index = 0; index < len; index++)
@@ -176,9 +176,9 @@ static uint32_t get_can_baud_index(rt_uint32_t baud)
     return 0; /* default baud is CAN1MBaud */
 }
 
-static uint8_t get_can_mode_rtt2n32(uint8_t rtt_can_mode)
+static rt_uint8_t get_can_mode_rtt2n32(rt_uint8_t rtt_can_mode)
 {
-    uint8_t mode = CAN_Mode_Normal;
+    rt_uint8_t mode = CAN_Mode_Normal;
     switch (rtt_can_mode)
     {
     case RT_CAN_MODE_NORMAL:
@@ -441,14 +441,14 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
             /* get default filter */
             for (int i = 0; i < filter_cfg->count; i++)
             {
-                if (filter_cfg->items[i].hdr == -1)
+                if (filter_cfg->items[i].hdr_bank == -1)
                 {
                     drv_can_obj->can_filter_init.CAN_FilterNumber = i;
                 }
                 else
                 {
                     /* use user-defined filter bank settings */
-                    drv_can_obj->can_filter_init.CAN_FilterNumber = filter_cfg->items[i].hdr;
+                    drv_can_obj->can_filter_init.CAN_FilterNumber = filter_cfg->items[i].hdr_bank;
                 }
 
                 if (filter_cfg->items[i].mode == 0x00)  //CAN_FILTERMODE_IDMASK
@@ -558,9 +558,9 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
 }
 
 /* CAN Mailbox Transmit Request */
-#define TMIDxR_TXRQ         ((uint32_t)0x00000001)
+#define TMIDxR_TXRQ         ((rt_uint32_t)0x00000001)
 
-static int _can_send_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, uint32_t mailbox_index)
+static int _can_send_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, rt_uint32_t mailbox_index)
 {
     CanTxMsg CAN_TxMessage = {0};
     CanTxMsg *TxMessage = &CAN_TxMessage;
@@ -629,20 +629,20 @@ static int _can_send_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, uint3
 
         /* Set DLC */
         TxMessage->DLC = pmsg->len & 0x0FU;
-        can_base->sTxMailBox[mailbox_index].TXMDTR &= (uint32_t)0xFFFFFFF0;
+        can_base->sTxMailBox[mailbox_index].TXMDTR &= (rt_uint32_t)0xFFFFFFF0;
         can_base->sTxMailBox[mailbox_index].TXMDTR |= TxMessage->DLC;
 
         /* Set data */
         can_base->sTxMailBox[mailbox_index].TXMDHR =
-            (((uint32_t)pmsg->data[7] << 24) |
-             ((uint32_t)pmsg->data[6] << 16) |
-             ((uint32_t)pmsg->data[5] << 8) |
-             ((uint32_t)pmsg->data[4]));
+            (((rt_uint32_t)pmsg->data[7] << 24) |
+             ((rt_uint32_t)pmsg->data[6] << 16) |
+             ((rt_uint32_t)pmsg->data[5] << 8) |
+             ((rt_uint32_t)pmsg->data[4]));
         can_base->sTxMailBox[mailbox_index].TXMDLR =
-            (((uint32_t)pmsg->data[3] << 24) |
-             ((uint32_t)pmsg->data[2] << 16) |
-             ((uint32_t)pmsg->data[1] << 8) |
-             ((uint32_t)pmsg->data[0]));
+            (((rt_uint32_t)pmsg->data[3] << 24) |
+             ((rt_uint32_t)pmsg->data[2] << 16) |
+             ((rt_uint32_t)pmsg->data[1] << 8) |
+             ((rt_uint32_t)pmsg->data[0]));
         /* Request transmission */
         can_base->sTxMailBox[mailbox_index].TXMIR |= TMIDxR_TXRQ;
 
@@ -665,7 +665,7 @@ static int _can_sendmsg(struct rt_can_device *can, const void *buf, rt_uint32_t 
     return _can_send_rtmsg(drv_can_obj->can_base, ((struct rt_can_msg *)buf), box_num);
 }
 
-static int _can_recv_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, uint32_t FIFONum)
+static int _can_recv_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, rt_uint32_t FIFONum)
 {
     CanRxMsg CAN_RxMessage = {0};
     CanRxMsg *RxMessage = &CAN_RxMessage;
@@ -676,30 +676,30 @@ static int _can_recv_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, uint3
         return -RT_ERROR;
     }
     /* Get the Id */
-    RxMessage->IDE = (uint8_t)(0x04 & can_base->sFIFOMailBox[FIFONum].RXMIR);
+    RxMessage->IDE = (rt_uint8_t)(0x04 & can_base->sFIFOMailBox[FIFONum].RXMIR);
     if (RxMessage->IDE == CAN_Id_Standard)
     {
-        RxMessage->StdId = (uint32_t)0x000007FF & (can_base->sFIFOMailBox[FIFONum].RXMIR >> 21);
+        RxMessage->StdId = (rt_uint32_t)0x000007FF & (can_base->sFIFOMailBox[FIFONum].RXMIR >> 21);
     }
     else
     {
-        RxMessage->ExtId = (uint32_t)0x1FFFFFFF & (can_base->sFIFOMailBox[FIFONum].RXMIR >> 3);
+        RxMessage->ExtId = (rt_uint32_t)0x1FFFFFFF & (can_base->sFIFOMailBox[FIFONum].RXMIR >> 3);
     }
-    RxMessage->RTR = (uint8_t)0x02 & can_base->sFIFOMailBox[FIFONum].RXMIR;
+    RxMessage->RTR = (rt_uint8_t)0x02 & can_base->sFIFOMailBox[FIFONum].RXMIR;
     /* Get the DLC */
-    RxMessage->DLC = (uint8_t)0x0F & can_base->sFIFOMailBox[FIFONum].RXMDTR;
+    RxMessage->DLC = (rt_uint8_t)0x0F & can_base->sFIFOMailBox[FIFONum].RXMDTR;
     /* Get the FMI */
-    RxMessage->FMI = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDTR >> 8);
+    RxMessage->FMI = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDTR >> 8);
 
     /* Get the data field */
-    pmsg->data[0] = (uint8_t)0xFF &  can_base->sFIFOMailBox[FIFONum].RXMDLR;
-    pmsg->data[1] = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDLR >> 8);
-    pmsg->data[2] = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDLR >> 16);
-    pmsg->data[3] = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDLR >> 24);
-    pmsg->data[4] = (uint8_t)0xFF &  can_base->sFIFOMailBox[FIFONum].RXMDHR;
-    pmsg->data[5] = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDHR >> 8);
-    pmsg->data[6] = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDHR >> 16);
-    pmsg->data[7] = (uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDHR >> 24);
+    pmsg->data[0] = (rt_uint8_t)0xFF &  can_base->sFIFOMailBox[FIFONum].RXMDLR;
+    pmsg->data[1] = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDLR >> 8);
+    pmsg->data[2] = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDLR >> 16);
+    pmsg->data[3] = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDLR >> 24);
+    pmsg->data[4] = (rt_uint8_t)0xFF &  can_base->sFIFOMailBox[FIFONum].RXMDHR;
+    pmsg->data[5] = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDHR >> 8);
+    pmsg->data[6] = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDHR >> 16);
+    pmsg->data[7] = (rt_uint8_t)0xFF & (can_base->sFIFOMailBox[FIFONum].RXMDHR >> 24);
 
     /* get len */
     pmsg->len = RxMessage->DLC;
@@ -725,14 +725,14 @@ static int _can_recv_rtmsg(CAN_TypeDef *can_base, struct rt_can_msg *pmsg, uint3
         pmsg->rtr = RT_CAN_RTR;
     }
 
-    /* get hdr */
+    /* get hdr_index */
     if (can_base == CAN1)
     {
-        pmsg->hdr = (RxMessage->FMI + 1) >> 1;
+        pmsg->hdr_index = (RxMessage->FMI + 1) >> 1;
     }
     else if (can_base == CAN2)
     {
-        pmsg->hdr = (RxMessage->FMI >> 1) + 14;
+        pmsg->hdr_index = (RxMessage->FMI >> 1) + 14;
     }
     /* Release FIFO */
     CAN_FIFORelease(can_base,FIFONum);

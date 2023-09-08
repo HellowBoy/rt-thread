@@ -270,7 +270,7 @@ int rt_hw_fsa506_port(void)
     rt_err_t ret = RT_EOK;
 
     /* Open ebi BOARD_USING_FSA506_EBI_PORT */
-    ret = nu_ebi_init(BOARD_USING_FSA506_EBI_PORT, EBI_BUSWIDTH_16BIT, EBI_TIMING_NORMAL, EBI_OPMODE_CACCESS, EBI_CS_ACTIVE_LOW);
+    ret = nu_ebi_init(BOARD_USING_FSA506_EBI_PORT, EBI_BUSWIDTH_16BIT, EBI_TIMING_SLOW, EBI_OPMODE_CACCESS, EBI_CS_ACTIVE_LOW);
     if (ret != RT_EOK)
         return ret;
 
@@ -347,7 +347,7 @@ int rt_hw_nct7717u_port(void)
     struct rt_sensor_config cfg;
 
     cfg.intf.dev_name = "i2c2";
-    cfg.irq_pin.pin = RT_PIN_NONE;
+    cfg.irq_pin.pin = PIN_IRQ_PIN_NONE;
 
     return rt_hw_nct7717u_init("nct7717u", &cfg);
 }

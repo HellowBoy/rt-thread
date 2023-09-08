@@ -7,7 +7,7 @@
 /* RT-Thread Kernel */
 
 #define RT_NAME_MAX 8
-#define RT_ALIGN_SIZE 4
+#define RT_ALIGN_SIZE 8
 #define RT_THREAD_PRIORITY_32
 #define RT_THREAD_PRIORITY_MAX 32
 #define RT_TICK_PER_SECOND 1000
@@ -34,6 +34,7 @@
 
 /* Memory Management */
 
+#define RT_PAGE_MAX_ORDER 11
 #define RT_USING_MEMPOOL
 #define RT_USING_MEMHEAP
 #define RT_MEMHEAP_FAST_MODE
@@ -48,8 +49,10 @@
 #define RT_CONSOLEBUF_SIZE 128
 #define RT_CONSOLE_DEVICE_NAME "uart1"
 #define RT_VER_NUM 0x50000
-#define ARCH_ARM
+#define RT_USING_CACHE
+#define RT_USING_HW_ATOMIC
 #define RT_USING_CPU_FFS
+#define ARCH_ARM
 #define ARCH_ARM_CORTEX_M
 #define ARCH_ARM_CORTEX_M7
 
@@ -89,6 +92,7 @@
 /* Device Drivers */
 
 #define RT_USING_DEVICE_IPC
+#define RT_UNAMED_PIPE_NUMBER 64
 #define RT_USING_SERIAL
 #define RT_USING_SERIAL_V2
 #define RT_SERIAL_USING_DMA
@@ -163,9 +167,6 @@
 /* u8g2: a monochrome graphic library */
 
 
-/* PainterEngine: A cross-platform graphics application framework written in C language */
-
-
 /* tools packages */
 
 
@@ -182,23 +183,22 @@
 
 /* Micrium: Micrium software products porting for RT-Thread */
 
-#define PKG_USING_LITTLEFS
-#define PKG_USING_LITTLEFS_V205
-#define LFS_READ_SIZE 256
-#define LFS_PROG_SIZE 256
-#define LFS_BLOCK_SIZE 4096
-#define LFS_CACHE_SIZE 256
-#define LFS_BLOCK_CYCLES 100
-#define LFS_THREADSAFE
-#define LFS_LOOKAHEAD_MAX 128
 
 /* peripheral libraries and drivers */
+
+/* sensors drivers */
+
+
+/* touch drivers */
 
 
 /* Kendryte SDK */
 
 
 /* AI packages */
+
+
+/* Signal Processing and Control Algorithm Packages */
 
 
 /* miscellaneous packages */
@@ -239,6 +239,7 @@
 
 /* Other */
 
+
 /* Signal IO */
 
 
@@ -253,7 +254,6 @@
 
 /* Onboard Peripheral Drivers */
 
-#define BSP_USING_SPI_FLASH
 #define BSP_USING_QSPI_FLASH
 #define BSP_USING_LCD_SPI
 #define LCD_BACKLIGHT_USING_GPIO

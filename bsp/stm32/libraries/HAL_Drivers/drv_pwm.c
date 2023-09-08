@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2022, RT-Thread Development Team
+ * Copyright (c) 2006-2023, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,8 +23,6 @@
 #define MAX_PERIOD 65535
 #define MIN_PERIOD 3
 #define MIN_PULSE 2
-
-extern void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 enum
 {
@@ -167,26 +165,19 @@ static rt_uint64_t tim_clock_get(TIM_HandleTypeDef *htim)
 
     stm32_tim_pclkx_doubler_get(&pclk1_doubler, &pclk2_doubler);
 
-#if defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
-    if (htim->Instance == TIM9 || htim->Instance == TIM10 || htim->Instance == TIM11)
-#elif defined(SOC_SERIES_STM32F3) || defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32H7)
-    if (htim->Instance == TIM15 || htim->Instance == TIM16 || htim->Instance == TIM17)
-#elif defined(SOC_SERIES_STM32MP1)
-    if (htim->Instance == TIM4)
-#elif defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
-    if (0)
-#else
-#error "This driver has not supported this series yet!"
-#endif
+/* Some series may only have APBPERIPH_BASE, don't have HAL_RCC_GetPCLK2Freq */
+#if defined(APBPERIPH_BASE)
+    tim_clock = (rt_uint32_t)(HAL_RCC_GetPCLK1Freq() * pclk1_doubler);
+#elif defined(APB1PERIPH_BASE) || defined(APB2PERIPH_BASE)
+    if ((rt_uint32_t)htim->Instance >= APB2PERIPH_BASE)
     {
-#if !(defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)) /* don't have HAL_RCC_GetPCLK2Freq */
         tim_clock = (rt_uint32_t)(HAL_RCC_GetPCLK2Freq() * pclk2_doubler);
-#endif
     }
     else
     {
         tim_clock = (rt_uint32_t)(HAL_RCC_GetPCLK1Freq() * pclk1_doubler);
     }
+#endif
 
     return tim_clock;
 }
@@ -278,9 +269,10 @@ static rt_err_t drv_pwm_set(TIM_HandleTypeDef *htim, struct rt_pwm_configuration
     {
         pulse = MIN_PULSE;
     }
-    else if (pulse > period)
+    /*To determine user input, output high level is required*/
+    else if (pulse >= period)
     {
-        pulse = period;
+        pulse = period + 1;
     }
     __HAL_TIM_SET_COMPARE(htim, channel, pulse - 1);
 
@@ -386,19 +378,14 @@ static rt_err_t stm32_hw_pwm_init(struct stm32_pwm *device)
 #if defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32L4)
     tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 #endif
-
     if (HAL_TIM_Base_Init(tim) != HAL_OK)
     {
         LOG_E("%s pwm init failed", device->name);
         result = -RT_ERROR;
         goto __exit;
     }
-    if (HAL_TIM_PWM_Init(tim) != HAL_OK)
-    {
-        LOG_E("%s pwm init failed", device->name);
-        result = -RT_ERROR;
-        goto __exit;
-    }
+
+    stm32_tim_enable_clock(tim);
 
     clock_config.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
     if (HAL_TIM_ConfigClockSource(tim, &clock_config) != HAL_OK)
@@ -408,13 +395,23 @@ static rt_err_t stm32_hw_pwm_init(struct stm32_pwm *device)
         goto __exit;
     }
 
-    master_config.MasterOutputTrigger = TIM_TRGO_RESET;
-    master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(tim, &master_config) != HAL_OK)
+    if (HAL_TIM_PWM_Init(tim) != HAL_OK)
     {
-        LOG_E("%s master config failed", device->name);
+        LOG_E("%s pwm init failed", device->name);
         result = -RT_ERROR;
         goto __exit;
+    }
+
+    if(IS_TIM_MASTER_INSTANCE(tim->Instance))
+    {
+        master_config.MasterOutputTrigger = TIM_TRGO_RESET;
+        master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+        if (HAL_TIMEx_MasterConfigSynchronization(tim, &master_config) != HAL_OK)
+        {
+            LOG_E("%s master config failed", device->name);
+            result = -RT_ERROR;
+            goto __exit;
+        }
     }
 
     oc_config.OCMode = TIM_OCMODE_PWM1;
@@ -466,6 +463,7 @@ static rt_err_t stm32_hw_pwm_init(struct stm32_pwm *device)
     }
 
     /* pwm pin configuration */
+    void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
     HAL_TIM_MspPostInit(tim);
 
     /* enable update request source */
@@ -475,7 +473,7 @@ __exit:
     return result;
 }
 
-static void pwm_get_channel(void)
+static void stm32_pwm_get_channel(void)
 {
 #ifdef BSP_USING_PWM1_CH1
     stm32_pwm_obj[PWM1_INDEX].channel |= 1 << 0;
@@ -619,7 +617,7 @@ static int stm32_pwm_init(void)
     int i = 0;
     int result = RT_EOK;
 
-    pwm_get_channel();
+    stm32_pwm_get_channel();
 
     for (i = 0; i < sizeof(stm32_pwm_obj) / sizeof(stm32_pwm_obj[0]); i++)
     {

@@ -32,7 +32,7 @@
 static int rt_hw_spi1_tfcard(void)
 {
     __HAL_RCC_GPIOC_CLK_ENABLE();
-    rt_hw_spi_device_attach("spi1", "spi10", GPIOC, GPIO_PIN_3);
+    rt_hw_spi_device_attach("spi1", "spi10", GET_PIN(C, 3));
     return msd_init("sd0", "spi10");
 }
 INIT_DEVICE_EXPORT(rt_hw_spi1_tfcard);
@@ -68,7 +68,7 @@ static const struct romfs_dirent _romfs_root[] =
 #endif
 };
 
-static const struct romfs_dirent romfs_root =
+const struct romfs_dirent romfs_root =
 {
     ROMFS_DIRENT_DIR, "/", (rt_uint8_t *)_romfs_root, sizeof(_romfs_root) / sizeof(_romfs_root[0])
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2023, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -11,10 +11,8 @@
  */
 
 #include <stdint.h>
-
 #include <rthw.h>
 #include <rtdevice.h>
-#include <rtservice.h>
 
 /**
  * @brief    This function will insert a node to the wait queue.
@@ -118,13 +116,14 @@ void rt_wqueue_wakeup(rt_wqueue_t *queue, void *key)
  *
  * @return   Return 0 if the thread is woken up.
  */
-int rt_wqueue_wait(rt_wqueue_t *queue, int condition, int msec)
+static int _rt_wqueue_wait(rt_wqueue_t *queue, int condition, int msec, int suspend_flag)
 {
     int tick;
     rt_thread_t tid = rt_thread_self();
     rt_timer_t  tmr = &(tid->thread_timer);
     struct rt_wqueue_node __wait;
     rt_base_t level;
+    rt_err_t ret;
 
     /* current context checking */
     RT_DEBUG_SCHEDULER_AVAILABLE(RT_TRUE);
@@ -150,8 +149,14 @@ int rt_wqueue_wait(rt_wqueue_t *queue, int condition, int msec)
         goto __exit_wakeup;
     }
 
+    ret = rt_thread_suspend_with_flag(tid, suspend_flag);
+    if (ret != RT_EOK)
+    {
+        rt_hw_interrupt_enable(level);
+        /* suspend failed */
+        return -RT_EINTR;
+    }
     rt_wqueue_add(queue, &__wait);
-    rt_thread_suspend(tid);
 
     /* start timer */
     if (tick != RT_WAITING_FOREVER)
@@ -175,4 +180,19 @@ __exit_wakeup:
     rt_wqueue_remove(&__wait);
 
     return tid->error;
+}
+
+int rt_wqueue_wait(rt_wqueue_t *queue, int condition, int msec)
+{
+    return _rt_wqueue_wait(queue, condition, msec, RT_UNINTERRUPTIBLE);
+}
+
+int rt_wqueue_wait_killable(rt_wqueue_t *queue, int condition, int msec)
+{
+    return _rt_wqueue_wait(queue, condition, msec, RT_KILLABLE);
+}
+
+int rt_wqueue_wait_interruptible(rt_wqueue_t *queue, int condition, int msec)
+{
+    return _rt_wqueue_wait(queue, condition, msec, RT_INTERRUPTIBLE);
 }

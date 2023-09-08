@@ -32,6 +32,17 @@ config USE_GIC
         source "$STANDALONE_DIR/drivers/gic/Kconfig"
     endif
 
+config USE_IOPAD
+    bool
+    prompt "Use Iopad"
+    depends on TARGET_E2000
+    help
+        Include Iopad
+    
+    if USE_IOPAD
+        source "$STANDALONE_DIR/drivers/iopad/Kconfig"
+    endif
+
 config USE_SERIAL
     bool
     prompt "Use SERIAL"
@@ -232,6 +243,28 @@ config USE_IPC
         source "$STANDALONE_DIR/drivers/ipc/Kconfig"
     endif
 
+
+config USE_MEDIA
+    bool
+    prompt "USE MEDIA"
+    default n
+    help
+        Include media drivers
+    
+    if USE_MEDIA
+        source "$STANDALONE_DIR/drivers/media/Kconfig"
+    endif
+
+config USE_SCMI_MHU
+    bool
+    prompt "USE SCMI_MHU"
+    default n
+    help
+        Include scmi_mhu drivers
+    
+    if USE_SCMI_MHU
+        source "$STANDALONE_DIR/drivers/scmi/Kconfig"
+    endif
 
 endmenu
 
